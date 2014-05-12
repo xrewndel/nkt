@@ -7,8 +7,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +26,7 @@ import org.apache.log4j.PropertyConfigurator;
 public class GAParse {
     private final static Logger log = Logger.getLogger(GAParse.class.getSimpleName());
     private static String path = "D:/tmp/ga";
-    private static List<Stat> list = new LinkedList<>();
+    private static List<Stat> stats = new LinkedList<>();
     Map s;
     
     public static void main(String[] args) {
@@ -50,9 +54,9 @@ public class GAParse {
                 log.info("Fitess: " + l);
                 
                 Stat stat = new Stat(cross, mutate);
-                if (!list.contains(stat)) { stat.add(l); list.add(stat); }
+                if (!stats.contains(stat)) { stat.add(l); stats.add(stat); }
                 else {
-                    for (Stat st : list) {
+                    for (Stat st : stats) {
                         if (st.equals(stat)) st.add(l);
                     }
                 }
@@ -62,14 +66,16 @@ public class GAParse {
         }
         
         Map<String, Double> map = new HashMap<String, Double>();
-        for (Stat st : list) {
+        for (Stat st : stats) {
             log.info("Stat: " + st.toString());
             log.info("Sum: " + st.sum());
             log.info("Avg: " + st.avg());
             map.put(st.id(), st.avg());
         }
+        Map<String, Double> sortedMap = sortByComparator(map);
         
         log.info("Map: " + map);
+        log.info("sortedMap (from best to worst): "); printMap(sortedMap);
     }
     
     public static File[] getFilesInDir(String path) {
@@ -80,6 +86,31 @@ public class GAParse {
         });
         
         return files;
+    }
+    
+    private static Map sortByComparator(Map unsortMap) {
+        List list = new LinkedList(unsortMap.entrySet());
+ 
+        // sort list based on comparator
+        Collections.sort(list, new Comparator() {
+            @Override public int compare(Object o1, Object o2) {
+                    return ((Comparable) ((Map.Entry) (o1)).getValue())
+                           .compareTo(((Map.Entry) (o2)).getValue());
+            }
+        });
+
+        // put sorted list into map again
+        //LinkedHashMap make sure order in which keys were inserted
+        Map sortedMap = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+                Map.Entry entry = (Map.Entry) it.next();
+                sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
+    }
+    
+    public static void printMap(Map<String, Double> map){
+        for (String s : map.keySet()) { System.out.println(s + ": " + map.get(s)); }
     }
     
     // Чтение локального файла построчно
