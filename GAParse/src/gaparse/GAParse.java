@@ -50,14 +50,18 @@ public class GAParse {
             log.info("Mutate: " + mutate);
             
             try {
-                List<Integer> l = read(files[i].getAbsolutePath());
-                log.info("Fitess: " + l);
+                Map<String, List<Integer>> map = read(files[i].getAbsolutePath());
+                log.info("Fitess: " + map);
                 
                 Stat stat = new Stat(cross, mutate);
-                if (!stats.contains(stat)) { stat.add(l); stats.add(stat); }
+                if (!stats.contains(stat)) { 
+                    stat.add(map.get("gen"), map.get("time"));
+                    stats.add(stat); }
                 else {
                     for (Stat st : stats) {
-                        if (st.equals(stat)) st.add(l);
+                        if (st.equals(stat)) {
+                            st.add(map.get("gen"), map.get("time"));
+                        }
                     }
                 }
             } catch (IOException ex) { log.info(ex);  }
@@ -65,17 +69,26 @@ public class GAParse {
             
         }
         
-        Map<String, Double> map = new HashMap<String, Double>();
+        Map<String, Double> mapGen = new HashMap<>();
         for (Stat st : stats) {
             log.info("Stat: " + st.toString());
-            log.info("Sum: " + st.sum());
-            log.info("Avg: " + st.avg());
-            map.put(st.id(), st.avg());
+            log.info("Sum: " + st.sumGen());
+            log.info("Avg: " + st.avgGen());
+            mapGen.put(st.id(), st.avgGen());
         }
-        Map<String, Double> sortedMap = sortByComparator(map);
+        Map<String, Double> sortedMapGen = sortByComparator(mapGen);
         
-        log.info("Map: " + map);
-        log.info("sortedMap (from best to worst): "); printMap(sortedMap);
+        Map<String, Double> mapTime = new HashMap<>();
+        for (Stat st : stats) {
+            mapTime.put(st.id(), st.avgTime());
+        }
+        Map<String, Double> sortedMapTime = sortByComparator(mapTime);
+        
+        log.info("Map: " + mapGen);
+        log.info("");
+        log.info("Sorted by generation (from best to worst): "); printMap(sortedMapGen);
+        log.info("");
+        log.info("Sorted by time, sec (from best to worst): "); printMap(sortedMapTime);
     }
     
     public static File[] getFilesInDir(String path) {
@@ -110,28 +123,40 @@ public class GAParse {
     }
     
     public static void printMap(Map<String, Double> map){
-        for (String s : map.keySet()) { System.out.println(s + ": " + map.get(s)); }
+        for (String s : map.keySet()) { log.info(s + ": " + map.get(s)); }
     }
     
     // Чтение локального файла построчно
-    public static List<Integer> read(String filename) throws IOException {
-        List<Integer> l = new ArrayList<>();
-        BufferedReader in = new BufferedReader(new FileReader(filename));
+    public static Map<String, List<Integer>> read(String filename) throws IOException {
+        List<Integer> gen = new ArrayList<>();
+        List<Integer> time = new ArrayList<>();
 
+        BufferedReader in = new BufferedReader(new FileReader(filename));
         while (in.ready()) {
             String s = in.readLine();
-            if (s.startsWith("2.")) l.add(Integer.valueOf(s.substring(4).trim()));
+            if (s.startsWith("2."))  gen.add(Integer.valueOf(s.substring(s.indexOf(" ")).trim()));
+            if (s.startsWith("Exec time:")) {
+                String[] minSec = s.substring(11).trim().replaceAll("m", "").replaceAll("sec", "").split(" ");
+                //System.out.println("Min:" + minSec[0]);
+                //System.out.println("Sec:" + minSec[1]);
+                int total = Integer.valueOf(minSec[0]) * 60 + Integer.valueOf(minSec[1]);
+                //System.out.println("Total:" + total);
+                time.add(total);
+            }
         }
         in.close();
         
-        return l;
+        Map<String, List<Integer>> map = new HashMap<>();
+        map.put("gen", gen);
+        map.put("time", time);
+        return map;
     }
     
     static class Stat {
-        private int idx;
         private int cross;
         private int mutate;
         private List<Integer> generation = new ArrayList<>();
+        private List<Integer> time = new ArrayList<>();
 
         public Stat(int cr, int mut) { cross = cr; mutate = mut; }
         public Stat(int cr, int mut, int gen) {
@@ -140,19 +165,24 @@ public class GAParse {
             generation.add(gen);
         }
         
-        public void add(int val) { generation.add(val); }
-        public void add(List<Integer> val) { generation.addAll(val); }
-        public int sum() { 
+        public void add(List<Integer> g, List<Integer> t) { generation.addAll(g); time.addAll(t);}
+        public int sumGen() { 
             int sum = 0;
             for (Integer i : generation) { sum += i; }
             return sum;
         }
+        public int sumTime() { 
+            int sum = 0;
+            for (Integer i : time) { sum += i; }
+            return sum;
+        }
         
-        public double avg() { return (double)sum() / generation.size(); }
+        public double avgGen() { return (double)sumGen() / generation.size(); }
+        public double avgTime() { return (double)sumTime() / time.size(); }
         public int size() { return generation.size(); }
         
-        @Override public String toString() { return "" + cross + "/" + mutate + ": " + generation.size() + "(" + generation + ")"; }
-        public String id() { return "" + cross + "/" + mutate; }
+        @Override public String toString() { return id() + ": " + generation.size() + "(" + generation + ")"; }
+        public String id() { return cross + "/" + mutate; }
         
         @Override public int hashCode() {
             int hash = 5;
@@ -162,19 +192,11 @@ public class GAParse {
         }
 
         @Override public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
+            if (obj == null) { return false; }
+            if (getClass() != obj.getClass()) { return false; }
             final Stat other = (Stat) obj;
-            if (this.cross != other.cross) {
-                return false;
-            }
-            if (this.mutate != other.mutate) {
-                return false;
-            }
+            if (this.cross != other.cross) { return false; }
+            if (this.mutate != other.mutate) { return false; }
             return true;
         }
     }
