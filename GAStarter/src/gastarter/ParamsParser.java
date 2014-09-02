@@ -1,13 +1,11 @@
 package gastarter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author Andrew
- * GA:
+ GA:
  -cfg config (ga3.cfg)
  -c crossover (0 - no, 1 - yes)
  -m mutation (0 - no, 1 - yes)
@@ -15,7 +13,7 @@ import java.util.Map;
  -g generations
  -f work files 
 
-* GAStarter:
+ GAStarter:
  -r repeat
  -cb crossover begin(start)
  -cs crossover step
@@ -32,8 +30,10 @@ import java.util.Map;
  -t test (1 or 0). If test - just print task
  */
 public class ParamsParser {
+    // по умолчанию все отключено
+    public static String begin = "java -jar GA.jar";
     public final String cfgDefault = "ga3.cfg";
-    public String cfg = "ga3.cfg";
+    public  String cfg = "ga3.cfg";
     public int crossover = 0;
     public int mutation = 0; 
     public int population = 50;
@@ -49,19 +49,19 @@ public class ParamsParser {
     public int mutateStep = 1;
     public int mutateEnd = 0;
     
-    public double frb = 0.05d;
-    public double frs = 0.05d;
-    public double fre = 0.05d;
+    public double frb = 0d;
+    public double frs = 0d;
+    public double fre = 0d;
     
-    public double wrb = 0.05d;
-    public double wrs = 0.05d;
-    public double wre = 0.05d;
+    public double wrb = 0d;
+    public double wrs = 0d;
+    public double wre = 0d;
     
     public boolean test = false;
     
-    public static String begin = "java -jar GA.jar";
-    
     public ParamsParser (String[] args) {
+        if (args.length % 2 > 0) throw new RuntimeException("Every param must has its value");
+        
         for (int param = 0; param < args.length; param++) {
             CMD cmd = CMD.fromString(args[param]);
             String val = "";
@@ -87,41 +87,13 @@ public class ParamsParser {
                 case wrb:   wrb = Double.valueOf(val);          break;
                 case wrs:   wrs = Double.valueOf(val);          break;
                 case wre:   wre = Double.valueOf(val);          break;
-                case t:     test = val.equals("1");
+                case wr:    wrb = frb; wrs = frs; wre = fre;    break;  // копируем интервал
+                case t:     test = val.equals("1");             break;
                 default: {
                     System.out.println("Paramter \"" + args[param] + "\" is unknown");
                     System.exit(1);
                 }
             }
-            /*
-            if (args[param].equals("-h"))    help();
-            if (args[param].equals("-cfg"))  cfg = val;
-            if (args[param].equals("-c"))    crossover = val.equals("1");
-            if (args[param].equals("-m"))    mutation = val.equals("1");
-            if (args[param].equals("-f"))    files = Integer.valueOf(val);
-            if (args[param].equals("-p"))    population = Integer.valueOf(val);
-            if (args[param].equals("-g"))    generation = Integer.valueOf(val);
-            
-            if (args[param].equals("-r"))    repeat = Integer.valueOf(val);
-            
-            if (args[param].equals("-cb"))   crossBegin = Integer.valueOf(val);
-            if (args[param].equals("-cs"))   crossStep = Integer.valueOf(val);
-            if (args[param].equals("-ce"))   crossEnd = Integer.valueOf(val);
-            
-            if (args[param].equals("-mb"))   mutateBegin = Integer.valueOf(val);
-            if (args[param].equals("-ms"))   mutateStep = Integer.valueOf(val);
-            if (args[param].equals("-me"))   mutateEnd = Integer.valueOf(val);
-            
-            if (args[param].equals("-frb"))  frb = Double.valueOf(val);
-            if (args[param].equals("-frs"))  frs = Double.valueOf(val);
-            if (args[param].equals("-fre"))  fre = Double.valueOf(val);
-            
-            if (args[param].equals("-wrb"))  wrb = Double.valueOf(val);
-            if (args[param].equals("-wrs"))  wrs = Double.valueOf(val);
-            if (args[param].equals("-wre"))  wre = Double.valueOf(val);
-            
-            if (args[param].equals("-t"))  test = val.equals("1");
-            */
             param++;
         }
         
@@ -130,6 +102,10 @@ public class ParamsParser {
     
     public boolean crossover() { return crossover == 1; }
     public boolean mutation() { return mutation == 1; }
+    public boolean fr() { return frb > 0 && fre > 0; }
+    public boolean wr() { return wrb > 0 && wre > 0; }
+    public boolean cross() { return crossBegin >0 && crossEnd > 0; }
+    public boolean mutate() { return mutateBegin >0 && mutateEnd > 0; }
     public String fixed() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin);
@@ -169,7 +145,7 @@ public class ParamsParser {
         if (wre < wrb) throw new RuntimeException(CMD.wre.param() + " < " + CMD.wrb.param());
         if (wre > 0 && wre > 0) mutation = 1;
     }
-
+    
     public final void help() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin).append(CMD.help);
@@ -178,12 +154,19 @@ public class ParamsParser {
     }
     
     public enum CMD { 
+        //GA
         cfg("-cfg", "\n\t-cfg file.cfg"),
         c("-c", "\n\t-c crossover"),
         m("-m", "\n\t-m mutation"),
         f("-f", "\n\t-f files"),
         p("-p", "\n\t-p populatio"),
         g("-g", "\n\t-g generations"),
+        cp("-cp", ""), // crossRate
+        mp("-mp", ""), // mutateRate
+        fr("-fr", ""), // freeRate
+        wr("-wr", ""), // wasteRate
+        
+        // GA Starter
         r("-r", "\n\t-r repeat"),
         cb("-cb", "\n\n\t-cb crossover begin(start)"),
         cs("-cs", "\n\t-cs crossover step"),
