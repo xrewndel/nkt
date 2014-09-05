@@ -25,11 +25,19 @@ import org.apache.log4j.PropertyConfigurator;
  */
 public class GAParse {
     private final static Logger log = Logger.getLogger(GAParse.class.getSimpleName());
-    private static String path = "D:/tmp/ga";
+    private static String path = "D:\\projects\\ga\\dist\\log";
     private static List<Stat> stats = new LinkedList<>();
     Map s;
     
     public static void main(String[] args) {
+        int cross = -1;
+        int mutate = -1;
+        int fr = -1;
+        int wr = -1;
+        Double bestFitness = 0d;
+        int bestfr = fr;
+        int bestwr = wr;
+        String bestFile = "";
         // set settings for log
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
         System.setProperty("current.date", dateFormat.format(new Date()));
@@ -40,33 +48,69 @@ public class GAParse {
         if (args.length > 1) path = args[1];
 
         File[] files = getFilesInDir(path);
-        for (int i = 0; i < files.length; i++) {
+        for (File file : files) {
             //log.info("#" + files[i].getName().indexOf("_"));
-            log.info("File: " + files[i].getName());
-            String[] s = files[i].getName().substring(29).replaceAll("_", "").replaceAll("mutate", "").replaceAll(".log", "").split("-");
-            int cross = Integer.valueOf(s[0]);
-            int mutate = Integer.valueOf(s[1]);
+            log.info("File: " + file.getName());
+            String[] t = file.getName().substring(23).replaceAll(".log", "").split("-");
+            for (String t1 : t) {
+                String[] q = t1.split("_");
+                switch(q[0]) {
+                    case "c": cross = Integer.valueOf(q[1]);    break;
+                    case "cross": cross = Integer.valueOf(q[1]);    break;
+                    case "m": mutate = Integer.valueOf(q[1]);   break;
+                    case "mutate": mutate = Integer.valueOf(q[1]);   break;
+                    case "fr": fr = Integer.valueOf(q[1]);      break;
+                    case "wr": wr = Integer.valueOf(q[1]);      break;
+                    default: System.out.println("Param " + q[0] + " is uknown");
+                }
+            }
             log.info("Cross: " + cross);
             log.info("Mutate: " + mutate);
+            log.info("Free rate: " + fr);
+            log.info("Waste rate: " + wr);
             
+            
+            // среднее считать - за сколько поколений в среднем достигается максимальнй фитнес - проще в расчетах писать и пихать в файл
             try {
-                Map<String, List<Integer>> map = read(files[i].getAbsolutePath());
-                log.info("Fitess: " + map);
+                Map map = read(file.getAbsolutePath());
+                log.info("Map: " + map);
+                List<Double> fitness = (List<Double>) map.get("fitness");
+                log.info("Fitness: " + fitness);
+                for (Double fit : fitness) {
+                    if (fit > bestFitness) {
+                        bestFitness = fit;
+                        bestFile = file.getAbsolutePath();
+                        if (fr == -1) {
+                            double d = (double) map.get("fr");
+                            System.out.println("d1: " + d);
+                            //bestfr = (int) map.get("fr");
+                            bestfr = (int) (d * 100);
+                            System.out.println("bestfr: " + bestfr);
+                        } 
+                        else bestfr = fr;
+                        
+                        if (wr == -1) {
+                            double d2 = (double) map.get("wr");
+                            System.out.println("d2: " + d2);
+                            //bestwr = (int) map.get("wr");
+                            bestwr = (int) (d2 * 100);
+                            System.out.println("bestwr: " + bestwr);
+                        } else bestwr = wr;
+                    }
+                }
                 
                 Stat stat = new Stat(cross, mutate);
                 if (!stats.contains(stat)) { 
-                    stat.add(map.get("gen"), map.get("time"));
+                    stat.add((List<Integer>)map.get("gen"), (List<Integer>)map.get("time"));
                     stats.add(stat); }
                 else {
                     for (Stat st : stats) {
                         if (st.equals(stat)) {
-                            st.add(map.get("gen"), map.get("time"));
+                            st.add((List<Integer>)map.get("gen"), (List<Integer>)map.get("time"));
                         }
                     }
                 }
-            } catch (IOException ex) { log.info(ex);  }
-            
-            
+            }catch (IOException ex) { log.info(ex);  }
         }
         
         Map<String, Double> mapGen = new HashMap<>();
@@ -89,6 +133,7 @@ public class GAParse {
         log.info("Sorted by generation (from best to worst): "); printMap(sortedMapGen);
         log.info("");
         log.info("Sorted by time, sec (from best to worst): "); printMap(sortedMapTime);
+        log.info("Best fitness: " + bestFitness + ". Fr: " + bestfr + ". Wr: " + bestwr + ". File " + bestFile);
     }
     
     public static File[] getFilesInDir(String path) {
@@ -127,9 +172,12 @@ public class GAParse {
     }
     
     // Чтение локального файла построчно
-    public static Map<String, List<Integer>> read(String filename) throws IOException {
+    public static Map read(String filename) throws IOException {
         List<Integer> gen = new ArrayList<>();
         List<Integer> time = new ArrayList<>();
+        List<Double> fitness = new ArrayList<>();
+        double fr = -1d;
+        double wr = -1d;
 
         BufferedReader in = new BufferedReader(new FileReader(filename));
         while (in.ready()) {
@@ -143,63 +191,31 @@ public class GAParse {
                 //System.out.println("Total:" + total);
                 time.add(total);
             }
+            if (s.startsWith("Fitness"))  fitness.add(Double.valueOf(s.substring(s.indexOf("=") + 1).trim()));
+            if (s.startsWith("Mutate free rate"))  fr = Double.valueOf(s.substring(s.indexOf(":") + 1).trim());
+            if (s.startsWith("Mutate waste rate"))  wr = Double.valueOf(s.substring(s.indexOf(":") + 1).trim());
         }
         in.close();
         
-        Map<String, List<Integer>> map = new HashMap<>();
+        Map map = new HashMap<>();
         map.put("gen", gen);
         map.put("time", time);
+        map.put("fitness", fitness);
+        map.put("fr", fr);
+        map.put("wr", wr);
         return map;
     }
     
-    static class Stat {
-        private int cross;
-        private int mutate;
-        private List<Integer> generation = new ArrayList<>();
-        private List<Integer> time = new ArrayList<>();
-
-        public Stat(int cr, int mut) { cross = cr; mutate = mut; }
-        public Stat(int cr, int mut, int gen) {
-            cross = cr;
-            mutate = mut;
-            generation.add(gen);
-        }
-        
-        public void add(List<Integer> g, List<Integer> t) { generation.addAll(g); time.addAll(t);}
-        public int sumGen() { 
-            int sum = 0;
-            for (Integer i : generation) { sum += i; }
-            return sum;
-        }
-        public int sumTime() { 
-            int sum = 0;
-            for (Integer i : time) { sum += i; }
-            return sum;
-        }
-        
-        public double avgGen() { return (double)sumGen() / generation.size(); }
-        public double avgTime() { return (double)sumTime() / time.size(); }
-        public int size() { return generation.size(); }
-        
-        @Override public String toString() { return id() + ": " + generation.size() + "(" + generation + ")"; }
-        public String id() { return cross + "/" + mutate; }
-        
-        @Override public int hashCode() {
-            int hash = 5;
-            hash = 17 * hash + this.cross;
-            hash = 17 * hash + this.mutate;
-            return hash;
-        }
-
-        @Override public boolean equals(Object obj) {
-            if (obj == null) { return false; }
-            if (getClass() != obj.getClass()) { return false; }
-            final Stat other = (Stat) obj;
-            if (this.cross != other.cross) { return false; }
-            if (this.mutate != other.mutate) { return false; }
-            return true;
-        }
+    public static String arrToStr(String[] arr) {
+        StringBuilder sb = new StringBuilder();
+        if (arr.length % 2 == 0)
+            for (int i = 0; i < arr.length; i++) {
+                sb.append(arr[i]);
+                if (i % 2 == 0) sb.append("\n");
+                else sb.append(": ");
+            }
+        else 
+            for (String arr1 : arr) {  sb.append(arr1).append(" "); }
+        return sb.toString();
     }
-    
-    
 }
