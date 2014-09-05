@@ -33,7 +33,7 @@ public class ParamsParser {
     // по умолчанию все отключено
     public static String begin = "java -jar GA.jar";
     public final String cfgDefault = "ga3.cfg";
-    public  String cfg = "ga3.cfg";
+    public String cfg = "ga3.cfg";
     public int crossover = 0;
     public int mutation = 0; 
     public int population = 50;
@@ -49,13 +49,13 @@ public class ParamsParser {
     public int mutateStep = 1;
     public int mutateEnd = 0;
     
-    public double frb = 0d;
-    public double frs = 0d;
-    public double fre = 0d;
+    public int frb = 0;
+    public int frs = 0;
+    public int fre = 0;
     
-    public double wrb = 0d;
-    public double wrs = 0d;
-    public double wre = 0d;
+    public int wrb = 0;
+    public int wrs = 0;
+    public int wre = 0;
     
     public boolean test = false;
     
@@ -81,12 +81,12 @@ public class ParamsParser {
                 case mb:    mutateBegin = Integer.valueOf(val); break;
                 case ms:    mutateStep = Integer.valueOf(val);  break;
                 case me:    mutateEnd = Integer.valueOf(val);   break;
-                case frb:   frb = Double.valueOf(val);          break;
-                case frs:   frs = Double.valueOf(val);          break;
-                case fre:   fre = Double.valueOf(val);          break;
-                case wrb:   wrb = Double.valueOf(val);          break;
-                case wrs:   wrs = Double.valueOf(val);          break;
-                case wre:   wre = Double.valueOf(val);          break;
+                case frb:   frb = Integer.valueOf(val);         break;
+                case frs:   frs = Integer.valueOf(val);         break;
+                case fre:   fre = Integer.valueOf(val);         break;
+                case wrb:   wrb = Integer.valueOf(val);         break;
+                case wrs:   wrs = Integer.valueOf(val);         break;
+                case wre:   wre = Integer.valueOf(val);         break;
                 case wr:    wrb = frb; wrs = frs; wre = fre;    break;  // копируем интервал
                 case t:     test = val.equals("1");             break;
                 default: {
@@ -104,8 +104,8 @@ public class ParamsParser {
     public boolean mutation() { return mutation == 1; }
     public boolean fr() { return frb > 0 && fre > 0; }
     public boolean wr() { return wrb > 0 && wre > 0; }
-    public boolean cross() { return crossBegin >0 && crossEnd > 0; }
-    public boolean mutate() { return mutateBegin >0 && mutateEnd > 0; }
+    public boolean cross() { return crossBegin > 0 && crossEnd > 0; }
+    public boolean mutate() { return mutateBegin > 0 && mutateEnd > 0; }
     public String fixed() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin);
@@ -149,7 +149,7 @@ public class ParamsParser {
     public final void help() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin).append(CMD.help);
-        sb.append("\n\tfrb, frs, fre, wrb, wrs, wre are doubles and specified like 0.01, 0.5");
+        sb.append("\n\tfrb, frs, fre, wrb, wrs, wre are rate but specified in integer like 10, 25");
         System.out.println(sb);
     }
     

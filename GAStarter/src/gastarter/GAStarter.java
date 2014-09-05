@@ -7,9 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- *
  * @author Andrew
- * 2 300 10 10 50 1 3 10
  */
 public class GAStarter {
     private static ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
@@ -40,22 +38,22 @@ public class GAStarter {
         }
         else if (params.mutation()) {
             if(params.fr() && params.wr()) {
-                for (double freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
-                    for (double wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
-                        String cmd = begin + CMD.fr.cmd() + round(freeRate) + CMD.wr.cmd() + round(wasteRate);
+                for (int freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
+                    for (int wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
+                        String cmd = begin + CMD.fr.cmd() + freeRate + CMD.wr.cmd() + wasteRate;
                         execute(cmd);
                     }
                 }
             }
             else if(params.fr() && !params.wr()) {
-                for (double freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
-                    String cmd = begin + CMD.fr.cmd() + round(freeRate);
+                for (int freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
+                    String cmd = begin + CMD.fr.cmd() + freeRate;
                     execute(cmd);
                 }
             }
             else if(!params.fr() && params.wr()) {
-                for (double wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
-                    String cmd = begin + CMD.wr.cmd() + round(wasteRate);
+                for (int wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
+                    String cmd = begin + CMD.wr.cmd() + wasteRate;
                     execute(cmd);
                 }
             }
