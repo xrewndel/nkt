@@ -31,7 +31,8 @@ import java.util.Map;
  */
 public class ParamsParser {
     // по умолчанию все отключено
-    public static String begin = "java -jar GA.jar";
+    public int cpu = Runtime.getRuntime().availableProcessors() - 2;
+    public static String begin = "java -jar GA.jar -o 0"; // -o 0 = no print to console extra data
     public final String cfgDefault = "ga3.cfg";
     public String cfg = "ga3.cfg";
     public int crossover = 0;
@@ -40,6 +41,7 @@ public class ParamsParser {
     public int generation  = 1000;
     public int files = 300;
     public int repeat = 3;
+    public int limit = 0;
     
     public int crossBegin = 0;
     public int crossStep = 1;
@@ -74,6 +76,7 @@ public class ParamsParser {
                 case f:     files = Integer.valueOf(val);       break;
                 case p:     population = Integer.valueOf(val);  break;
                 case g:     generation = Integer.valueOf(val);  break;
+                case l:     limit = Integer.valueOf(val);       break;
                 case r:     repeat = Integer.valueOf(val);      break;
                 case cb:    crossBegin = Integer.valueOf(val);  break;
                 case cs:    crossStep = Integer.valueOf(val);   break;
@@ -89,6 +92,8 @@ public class ParamsParser {
                 case wre:   wre = Integer.valueOf(val);         break;
                 case wr:    wrb = frb; wrs = frs; wre = fre;    break;  // копируем интервал
                 case t:     test = val.equals("1");             break;
+                case cpu:   cpu = Integer.valueOf(val);         break;
+                
                 default: {
                     System.out.println("Paramter \"" + args[param] + "\" is unknown");
                     System.exit(1);
@@ -112,6 +117,8 @@ public class ParamsParser {
         if (!cfg.equals(cfgDefault)) sb.append(CMD.cfg.cmd()).append(cfg);
         sb.append(CMD.c.cmd()).append(crossover);
         sb.append(CMD.m.cmd()).append(mutation);
+        sb.append(CMD.l.cmd()).append(limit);
+        if (mutateBegin == mutateEnd)  sb.append(CMD.mp.cmd()).append(mutateBegin);
         
          return sb.toString();
     }
@@ -165,6 +172,7 @@ public class ParamsParser {
         mp("-mp", ""), // mutateRate
         fr("-fr", ""), // freeRate
         wr("-wr", ""), // wasteRate
+        l("-l", "\n\t limit. Track fitness change over 100 generetion"),
         
         // GA Starter
         r("-r", "\n\t-r repeat"),
@@ -181,6 +189,7 @@ public class ParamsParser {
         wrs("-wrs", "\n\t-wrs mutation waste rate step"),
         wre("-wre", "\n\t-wre mutation waste rate end"),
         t("-t", "\n\n\t-t test"),
+        cpu("-cpu", "\n\t number of cpu"),
         h("-h", ""),
         undef ("", "");
         

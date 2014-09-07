@@ -10,7 +10,7 @@ import java.util.concurrent.Executors;
  * @author Andrew
  */
 public class GAStarter {
-    private static ExecutorService pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() - 1);
+    private static ExecutorService pool;
     private static ParamsParser params;
     
     public static void main(String[] args) throws InterruptedException {
@@ -21,6 +21,7 @@ public class GAStarter {
             System.exit(1);
         }
         
+        pool = Executors.newFixedThreadPool(params.cpu);
         System.out.print("Cores: " + Runtime.getRuntime().availableProcessors() + "\n");
         
         // формируем неизменную часть строки запуска
