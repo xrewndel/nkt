@@ -42,7 +42,7 @@ public class HLRParse {
         PropertyConfigurator.configure(cfgFile.getAbsolutePath());
         
         File[] files = getFilesInDir(path);
-        Map<Integer, Stat> map2 = new HashMap<>();
+        Map<Integer, Stat> map2 = new HashMap<Integer, Stat>();
         for (File file : files) {
             List<Stat> stats = read(file.getAbsolutePath());
             for (Stat stat : stats) {
@@ -96,7 +96,7 @@ public class HLRParse {
     // Чтение локального файла построчно
     private static List<Stat> read(String filename) {
         System.out.println("Read " + filename);
-        List<Stat> list = new ArrayList<>();
+        List<Stat> list = new ArrayList<Stat>();
         if (filename.endsWith(".log")) list.addAll(readTxtFile(filename));
         if (filename.endsWith(".bz2")) {
             list.addAll(readBZ2(filename));
@@ -106,7 +106,7 @@ public class HLRParse {
     }
     
     private static List<Stat> readTxtFile(String filename) {
-        List<Stat> list = new ArrayList<>();
+        List<Stat> list = new ArrayList<Stat>();
         try {
             BufferedReader in = new BufferedReader(new FileReader(filename));
             while (in.ready()) {
@@ -122,7 +122,7 @@ public class HLRParse {
     }
     
     private static List<Stat> parseString(String s) {
-        List<Stat> list = new ArrayList<>();
+        List<Stat> list = new ArrayList<Stat>();
         if (s.contains("hlr:findProvider") && s.contains("HlrResponse = HlrResponse{")) {
             //System.out.println("Parse string " + s);
             s = s.replace("}", "");
@@ -135,7 +135,7 @@ public class HLRParse {
     }
     
     private static List<Stat> readBZ2(String filename) {
-        List<Stat> list = new ArrayList<>();
+        List<Stat> list = new ArrayList<Stat>();
         try {
             FileInputStream in = new FileInputStream(filename);
             BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);

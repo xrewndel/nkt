@@ -1,7 +1,6 @@
 package hlrparse;
 
 import java.util.Comparator;
-import java.util.Objects;
 
 /**
  *
@@ -47,8 +46,8 @@ public class Stat implements Comparable<Stat>{
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 71 * hash + Objects.hashCode(this.orn);
-        hash = 71 * hash + Objects.hashCode(this.ocn);
+        hash = 71 * hash + this.orn.hashCode();
+        hash = 71 * hash + this.ocn.hashCode();
         return hash;
     }
 
