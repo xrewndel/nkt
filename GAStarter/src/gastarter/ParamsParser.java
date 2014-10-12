@@ -1,5 +1,7 @@
 package gastarter;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,7 +43,7 @@ public class ParamsParser {
     public int generation  = 1000;
     public int files = 300;
     public int repeat = 3;
-    public int limit = 0;
+    public int limit = 100;
     
     public int crossBegin = 0;
     public int crossStep = 1;
@@ -62,8 +64,20 @@ public class ParamsParser {
     public boolean test = false;
     
     public ParamsParser (String[] args) {
-        if (args.length % 2 > 0) throw new RuntimeException("Every param must has its value");
+        File cfgFile = new File(args[0]);
+        Config config = null;
+        try {
+            config = new Config(cfgFile.getAbsolutePath());
+            //config.printPropertyList();
+        } catch (Exception ex) {
+            System.out.print("Config file not found: " + ex.getLocalizedMessage() + "\n");
+            throw new RuntimeException("Specify config file. ");
+        }
         
+        //System.out.println(config.asMap());
+                
+        //if (args.length % 2 > 0) throw new RuntimeException("Every param must has its value");
+        /*
         for (int param = 0; param < args.length; param++) {
             CMD cmd = CMD.fromString(args[param]);
             String val = "";
@@ -101,12 +115,47 @@ public class ParamsParser {
             }
             param++;
         }
+        */
+        
+        Map<String, String> paramsMap = config.asMap();
+        for (String param : paramsMap.keySet()) {
+            switch(param) {
+                case "cfg": cfg = paramsMap.get(param);
+                case "crossover":   crossover = Integer.valueOf(paramsMap.get(param));   break;
+                case "mutation":    mutation = Integer.valueOf(paramsMap.get(param));    break;
+                case "files":       files = Integer.valueOf(paramsMap.get(param));       break;
+                case "population":  population = Integer.valueOf(paramsMap.get(param));  break;
+                case "generation":  generation = Integer.valueOf(paramsMap.get(param));  break;
+                case "limit":       limit = Integer.valueOf(paramsMap.get(param));       break;
+                case "repeat":      repeat = Integer.valueOf(paramsMap.get(param));      break;
+                case "crossBegin":  crossBegin = Integer.valueOf(paramsMap.get(param));  break;
+                case "crossStep":   crossStep = Integer.valueOf(paramsMap.get(param));   break;
+                case "crossEnd":    crossEnd = Integer.valueOf(paramsMap.get(param));    break;
+                case "mutateBegin": mutateBegin = Integer.valueOf(paramsMap.get(param)); break;
+                case "mutateStep":  mutateStep = Integer.valueOf(paramsMap.get(param));  break;
+                case "mutateEnd":   mutateEnd = Integer.valueOf(paramsMap.get(param));   break;
+                case "frb":         frb = Integer.valueOf(paramsMap.get(param));         break;
+                case "frs":         frs = Integer.valueOf(paramsMap.get(param));         break;
+                case "fre":         fre = Integer.valueOf(paramsMap.get(param));         break;
+                case "wrb":         wrb = Integer.valueOf(paramsMap.get(param));         break;
+                case "wrs":         wrs = Integer.valueOf(paramsMap.get(param));         break;
+                case "wre":         wre = Integer.valueOf(paramsMap.get(param));         break;
+                case "wr":          wrb = frb; wrs = frs; wre = fre;                     break;  // копируем интервал
+                case "test":        test = Boolean.valueOf(paramsMap.get(param));        break;
+                case "cpu":         cpu = Integer.valueOf(paramsMap.get(param));         break;
+                default: {
+                    System.out.println("Paramter \"" + param + "\" is unknown");
+                    System.exit(1);
+                }
+            }
+        }
         
         validate();
     }
     
-    public boolean crossover() { return crossover == 1; }
-    public boolean mutation() { return mutation == 1; }
+    public boolean crossover()      { return crossover == 1 && mutation == 0; }
+    public boolean mutation()       { return crossover == 0 && mutation == 1; }
+    public boolean crossAndMutate() { return crossover == 1 && mutation == 1; }
     public boolean fr() { return frb > 0 && fre > 0; }
     public boolean wr() { return wrb > 0 && wre > 0; }
     public boolean cross() { return crossBegin > 0 && crossEnd > 0; }
@@ -114,11 +163,11 @@ public class ParamsParser {
     public String fixed() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin);
-        if (!cfg.equals(cfgDefault)) sb.append(CMD.cfg.cmd()).append(cfg);
-        sb.append(CMD.c.cmd()).append(crossover);
-        sb.append(CMD.m.cmd()).append(mutation);
-        sb.append(CMD.l.cmd()).append(limit);
-        if (mutateBegin == mutateEnd)  sb.append(CMD.mp.cmd()).append(mutateBegin);
+        if (!cfg.equals(cfgDefault)) sb.append(CMD.cfg.cmd(cfg));
+        sb.append(CMD.c.cmd(crossover));
+        sb.append(CMD.m.cmd(mutation));
+        sb.append(CMD.l.cmd(limit));
+        if (mutateBegin == mutateEnd)  sb.append(CMD.mp.cmd(mutateBegin));
         
          return sb.toString();
     }
@@ -153,7 +202,7 @@ public class ParamsParser {
         if (wre > 0 && wre > 0) mutation = 1;
     }
     
-    public final void help() {
+    public final static void help() {
         StringBuilder sb = new StringBuilder();
         sb.append(begin).append(CMD.help);
         sb.append("\n\tfrb, frs, fre, wrb, wrs, wre are rate but specified in integer like 10, 25");
@@ -172,7 +221,7 @@ public class ParamsParser {
         mp("-mp", ""), // mutateRate
         fr("-fr", ""), // freeRate
         wr("-wr", ""), // wasteRate
-        l("-l", "\n\t limit. Track fitness change over 100 generetion"),
+        l("-l", "\n\t limit. Track fitness change over n generetion"),
         
         // GA Starter
         r("-r", "\n\t-r repeat"),
@@ -208,7 +257,8 @@ public class ParamsParser {
         }
         
         //public String hlp() { return hlp; }
-        public String cmd() { return " " + name + " "; }
+        public String cmd(String value) { return " " + name + " " + value; }
+        public String cmd(int value) { return cmd("" + value); }
         public String param() { return name; }
     }
 }

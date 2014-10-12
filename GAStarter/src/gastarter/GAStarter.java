@@ -14,53 +14,60 @@ public class GAStarter {
     private static ParamsParser params;
     
     public static void main(String[] args) throws InterruptedException {
-        params = new ParamsParser(args);
-        
         if (args.length == 0) {
-            params.help();
+            ParamsParser.help();
             System.exit(1);
         }
         
+        params = new ParamsParser(args);
         pool = Executors.newFixedThreadPool(params.cpu);
         System.out.print("Cores: " + Runtime.getRuntime().availableProcessors() + "\n");
         
         // формируем неизменную часть строки запуска
         String begin = params.fixed();
-        if (params.crossover() && params.mutation()) {
+        if (params.crossAndMutate()) {
             for (int cross = params.crossBegin; cross < params.crossEnd; cross += params.crossStep) {
                 for (int mutate = params.crossBegin; mutate <= params.mutateEnd; mutate += params.mutateStep) {
-                    String cmd = begin + CMD.f.cmd() + params.files + " 20 " + CMD.cp.cmd() + cross + CMD.mp.cmd() + mutate; // хз что 20 такое. разобраться
-                    execute(cmd);
+                    String cmd = begin + CMD.f.cmd(params.files) + CMD.cp.cmd(cross) + CMD.mp.cmd(mutate);
+                    mutation(cmd);
+                    //execute(cmd);
                 }
             }
         }
         else if (params.crossover()) {
-            
+            for (int cross = params.crossBegin; cross < params.crossEnd; cross += params.crossStep) {
+                String cmd = begin + CMD.f.cmd(params.files) + CMD.cp.cmd(cross) + CMD.m.cmd(params.mutation); 
+                execute(cmd);
+            }
         }
         else if (params.mutation()) {
-            if(params.fr() && params.wr()) {
+            mutation(begin);
+        }
+        
+        pool.shutdown();
+    }
+    
+    private static void mutation(String begin) {
+        if(params.fr() && params.wr()) {
                 for (int freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
                     for (int wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
-                        String cmd = begin + CMD.fr.cmd() + freeRate + CMD.wr.cmd() + wasteRate;
+                        String cmd = begin + CMD.fr.cmd(freeRate) + CMD.wr.cmd(wasteRate);
                         execute(cmd);
                     }
                 }
             }
             else if(params.fr() && !params.wr()) {
                 for (int freeRate = params.frb; freeRate < params.fre; freeRate += params.frs) {
-                    String cmd = begin + CMD.fr.cmd() + freeRate;
+                    String cmd = begin + CMD.fr.cmd(freeRate);
                     execute(cmd);
                 }
             }
             else if(!params.fr() && params.wr()) {
                 for (int wasteRate = params.wrb; wasteRate <= params.wre; wasteRate += params.wrs) {
-                    String cmd = begin + CMD.wr.cmd() + wasteRate;
+                    String cmd = begin + CMD.wr.cmd(wasteRate);
                     execute(cmd);
                 }
             }
-        }
-        
-        pool.shutdown();
     }
     
     private static void execute(String exec) {
