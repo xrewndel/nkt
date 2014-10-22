@@ -43,7 +43,7 @@ public class HLRParse {
     Map s;
     
     public static void main(String[] args) {
-        // set settings for log
+        // settings for log
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH-mm-ss");
         System.setProperty("current.date", dateFormat.format(new Date()));
         // set path
@@ -136,47 +136,9 @@ public class HLRParse {
         } catch (Exception ex) {
             System.out.println(ex);
         }
-        
-        //extractXmlTxt(filename);
-        
+
         return list;
     }
-    
-//    private static List<Stat> extractXmlTxt(String filename) {
-//        List<Stat> list = new ArrayList<Stat>();
-//        List<String> strList = new ArrayList<String>();
-//        try {
-//            BufferedReader in = new BufferedReader(new FileReader(filename));
-//            while (in.ready()) {
-//                strList.add(in.readLine());
-//            }
-//            in.close();
-//            list.addAll(extractXml(strList));
-//        } catch (Exception ex) {
-//            System.out.println(ex);
-//        }
-//        
-//        return list;
-//    }
-    
-//    private static List<Stat> extractXmlBZ2(String filename) {
-//        List<Stat> list = new ArrayList<Stat>();
-//        try {
-//            FileInputStream in = new FileInputStream(filename);
-//            BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
-//            
-//            ByteArrayOutputStream  writer = new ByteArrayOutputStream();
-//            IOUtils.copy(bzIn, writer, 2048);
-//            String theString = writer.toString();
-//            bzIn.close();
-//            
-//            String[] str = theString.split("\n");
-//            List<String> strList = new ArrayList<String>(Arrays.asList(str));
-//            list.addAll(extractXml(strList));
-//        } catch (Exception ex) { System.err.println(ex);  }
-//        
-//        return list;
-//    }
     
     private static List<Stat> extractXml(List<String> str) {
         List<Stat> list = new ArrayList<Stat>();
@@ -192,8 +154,8 @@ public class HLRParse {
                 xml = false;
                 xmlAsString.append(s);
                 // parse xml
-                //System.out.println("XML: " + xmlAsString);
                 Stat stat = parseXml(xmlAsString.toString());
+                //System.out.println("XML: " + xmlAsString);
                 //System.out.println(stat);
                 list.add(stat);
             }
@@ -212,9 +174,7 @@ public class HLRParse {
             Document doc = builder.parse(stream);
             NodeList nodeList = doc.getDocumentElement().getChildNodes();
             stat = Stat.init(nodeList);
-        } catch(Exception ex) {  
-            System.out.println(ex);  
-        }
+        } catch(Exception ex) { System.out.println(ex);  }
         
         return stat;
     }
@@ -251,8 +211,6 @@ public class HLRParse {
             List<String> strList = new ArrayList<String>(Arrays.asList(arr));
             list.addAll(extractXml(strList));
         } catch (Exception ex) { System.err.println(ex);  }
-        
-        //extractXmlBZ2(filename);
         
         return list;
     }
