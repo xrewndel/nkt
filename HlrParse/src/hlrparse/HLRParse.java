@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.log4j.Logger;
@@ -51,10 +52,11 @@ public class HLRParse {
         PropertyConfigurator.configure(cfgFile.getAbsolutePath());
         
         File[] files = getFilesInDir(path);
-        for (File file : files) {
+        Set<File> flist = new TreeSet<File>(Arrays.asList(files));
+        for (File file : flist) {
             csvAllLog.debug(format(read(file.getAbsolutePath()), outType.csvAll));
         }
-        System.out.println("Readed files: " + files.length);
+        System.out.println("Total files: " + files.length);
     }
     
     private static File[] getFilesInDir(String path) {
@@ -96,7 +98,7 @@ public class HLRParse {
     }
     
     private static List<Stat> readTxtFile(String filename) {
-        List<String> strList = new ArrayList<String>();
+        List<String> strings = new ArrayList<String>();
         try {
             BufferedReader in = new BufferedReader(new FileReader(filename));
             while (in.ready()) {
@@ -105,10 +107,10 @@ public class HLRParse {
                 //list.addAll(parseString(s));
                 
                 //for xml
-                strList.add(in.readLine());
+                strings.add(in.readLine());
             }
             in.close();
-            return extractXml(strList);
+            return extractXml(strings);
         } catch (Exception ex) {
             System.out.println(ex);
         }
