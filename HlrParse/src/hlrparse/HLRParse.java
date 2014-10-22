@@ -108,7 +108,7 @@ public class HLRParse {
         return sortedMap;
     }
     
-    // Чтение локального файла построчно
+    // Чтение файла
     private static List<Stat> read(String filename) {
         System.out.println("Read " + filename);
         List<Stat> list = new ArrayList<Stat>();
@@ -137,6 +137,29 @@ public class HLRParse {
             System.out.println(ex);
         }
 
+        return list;
+    }
+    
+    private static List<Stat> readBZ2(String filename) {
+        List<Stat> list = new ArrayList<Stat>();
+        try {
+            FileInputStream in = new FileInputStream(filename);
+            BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
+            
+            ByteArrayOutputStream  writer = new ByteArrayOutputStream();
+            IOUtils.copy(bzIn, writer, 2048);
+            String theString = writer.toString();
+            bzIn.close();
+            
+            String[] arr = theString.split("\n");
+            // for string
+            //for (String item : arr) list.addAll(parseString(item));
+            
+            // for xml
+            List<String> strList = new ArrayList<String>(Arrays.asList(arr));
+            list.addAll(extractXml(strList));
+        } catch (Exception ex) { System.err.println(ex);  }
+        
         return list;
     }
     
@@ -189,29 +212,6 @@ public class HLRParse {
             list.add(new Stat(splitted));
         }
 
-        return list;
-    }
-    
-    private static List<Stat> readBZ2(String filename) {
-        List<Stat> list = new ArrayList<Stat>();
-        try {
-            FileInputStream in = new FileInputStream(filename);
-            BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
-            
-            ByteArrayOutputStream  writer = new ByteArrayOutputStream();
-            IOUtils.copy(bzIn, writer, 2048);
-            String theString = writer.toString();
-            bzIn.close();
-            
-            String[] arr = theString.split("\n");
-            // for string
-            //for (String item : arr) list.addAll(parseString(item));
-            
-            // for xml
-            List<String> strList = new ArrayList<String>(Arrays.asList(arr));
-            list.addAll(extractXml(strList));
-        } catch (Exception ex) { System.err.println(ex);  }
-        
         return list;
     }
     
