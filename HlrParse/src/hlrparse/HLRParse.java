@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Formatter;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -36,11 +35,11 @@ import org.w3c.dom.NodeList;
  * @author Andrew
  */
 public class HLRParse {
-    private final static Logger log = Logger.getLogger(outType.txt.name());
-    private final static Logger csvLog = Logger.getLogger(outType.csv.name());
+    //private final static Logger log = Logger.getLogger(outType.txt.name());
+    //private final static Logger csvLog = Logger.getLogger(outType.csv.name());
     private final static Logger csvAllLog = Logger.getLogger(outType.csvAll.name());
     private static String path = "";
-    Map s;
+    //Map s;
     
     public static void main(String[] args) {
         // settings for log
@@ -51,30 +50,11 @@ public class HLRParse {
         File cfgFile = new File(args[0]);
         PropertyConfigurator.configure(cfgFile.getAbsolutePath());
         
-        List<Stat> bundle = new ArrayList<Stat>();
         File[] files = getFilesInDir(path);
-        Map<Integer, Stat> map2 = new HashMap<Integer, Stat>();
         for (File file : files) {
-            List<Stat> stats = read(file.getAbsolutePath());
-            bundle.addAll(stats);
-            for (Stat stat : stats) {
-                if (map2.containsKey(stat.hashCode()))
-                    map2.get(stat.hashCode()).increment(stat);
-                else
-                    map2.put(stat.hashCode(), stat);
-            }
+            csvAllLog.debug(format(read(file.getAbsolutePath()), outType.csvAll));
         }
-        //System.out.println("BUNDLE: " + bundle.size());
-        //for (Stat stat : bundle) System.out.println(stat);
-
-        map2 = sortByComparator(map2); // sort by num
-        List<Stat> list = new ArrayList<Stat>(map2.values());
-        log.debug(format(list, outType.txt));
-        //Collections.sort(list, new StatComparator());
-        Collections.sort(list, Stat.ornComparator);
-        log.debug(format(list, outType.txt));
-        csvLog.debug(format(list, outType.csv));
-        csvAllLog.debug(format(bundle, outType.csvAll));
+        System.out.println("Readed files: " + files.length);
     }
     
     private static File[] getFilesInDir(String path) {
@@ -99,7 +79,6 @@ public class HLRParse {
         });
 
         // put sorted list into map again
-        //LinkedHashMap make sure order in which keys were inserted
         Map sortedMap = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
                 Map.Entry entry = (Map.Entry) it.next();
@@ -111,15 +90,12 @@ public class HLRParse {
     // Чтение файла
     private static List<Stat> read(String filename) {
         System.out.println("Read " + filename);
-        List<Stat> list = new ArrayList<Stat>();
-        if (filename.endsWith(".log")) list.addAll(readTxtFile(filename));
-        if (filename.endsWith(".bz2")) list.addAll(readBZ2(filename));
-
-        return list;
+        //if (filename.endsWith(".log")) return readTxtFile(filename);
+        if (filename.endsWith(".bz2")) return readBZ2(filename);
+        else return readTxtFile(filename);
     }
     
     private static List<Stat> readTxtFile(String filename) {
-        List<Stat> list = new ArrayList<Stat>();
         List<String> strList = new ArrayList<String>();
         try {
             BufferedReader in = new BufferedReader(new FileReader(filename));
@@ -132,16 +108,15 @@ public class HLRParse {
                 strList.add(in.readLine());
             }
             in.close();
-            list.addAll(extractXml(strList));
+            return extractXml(strList);
         } catch (Exception ex) {
             System.out.println(ex);
         }
 
-        return list;
+        return new ArrayList<Stat>();
     }
     
     private static List<Stat> readBZ2(String filename) {
-        List<Stat> list = new ArrayList<Stat>();
         try {
             FileInputStream in = new FileInputStream(filename);
             BZip2CompressorInputStream bzIn = new BZip2CompressorInputStream(in);
@@ -157,10 +132,10 @@ public class HLRParse {
             
             // for xml
             List<String> strList = new ArrayList<String>(Arrays.asList(arr));
-            list.addAll(extractXml(strList));
+            return extractXml(strList);
         } catch (Exception ex) { System.err.println(ex);  }
         
-        return list;
+        return new ArrayList<Stat>();
     }
     
     private static List<Stat> extractXml(List<String> str) {
